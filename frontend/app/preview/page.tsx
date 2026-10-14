@@ -120,7 +120,7 @@ export default function PreviewPage() {
       <footer>
         <Link href="/preview" aria-label="MusIQ Central home">Mus<span>IQ</span> <small>CENTRAL</small></Link>
         <p>The Smarter Way to Listen, Watch & Experience Music and More.</p>
-        <p>© {new Date().getFullYear()} MusIQ Central. All rights reserved.</p>
+        <p>© 2026 MusIQ Central. All rights reserved.</p>
       </footer>
     </div>
   );
