@@ -1,0 +1,130 @@
+.page {
+  --background: #030711;
+  --foreground: #f4f8ff;
+  --text-primary: #f4f8ff;
+  --text-secondary: #a9bfd5;
+  --button-primary-hover: #0761ea;
+  --button-secondary-hover: #0f2541;
+  --button-secondary-border: #24547d;
+  min-height: 100vh;
+  color: var(--foreground);
+  background: radial-gradient(ellipse at 50% 10%, #0a2b53 0%, #061321 26%, #030711 62%);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.page header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid #214064;
+  padding: 16px clamp(22px, 5vw, 80px);
+  background: #030912ee;
+}
+.page header > a:first-child,
+.page footer > a {
+  display: inline-flex;
+  flex-direction: column;
+  color: #e6f1ff;
+  font-size: 27px;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -1.5px;
+}
+.page header > a:first-child span span,
+.page footer > a span { color: #36baff; }
+.page header > a:first-child small,
+.page footer > a small {
+  color: #b4d8f0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 5px;
+  text-align: center;
+  margin-top: 6px;
+}
+.page nav { display: flex; align-items: center; gap: clamp(14px, 2vw, 34px); }
+.page nav a { color: #c8d8eb; font-size: 13px; }
+.page nav a:hover { color: #53c9ff; }
+.page header > a:last-child { padding: 10px 16px; border: 1px solid #2878b0; border-radius: 5px; font-size: 12px; color: #dcf4ff; }
+.page header > a:last-child span { color: #3fbcff; padding-left: 10px; }
+.main { width: 100%; }
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+  padding: 54px 24px 44px;
+  background: radial-gradient(ellipse at center 35%, #103c73b2, transparent 54%);
+}
+.intro > p:first-child,
+.page main > section:not(:first-child) > p:first-child,
+.page main > section:not(:first-child) > div:first-child > p:first-child {
+  color: #61c7ff;
+  font-size: 10px;
+  letter-spacing: 4px;
+  font-weight: 700;
+}
+.logo {
+  display: block;
+  width: min(720px, 92vw);
+  height: auto;
+  max-height: 410px;
+  object-fit: contain;
+  margin: -4px 0 -44px;
+  mix-blend-mode: screen;
+}
+.intro h1 { max-width: 920px; font-size: clamp(29px, 4vw, 54px); line-height: 1.12; letter-spacing: -1.6px; }
+.intro h1 em,
+.page h2 em { font-style: normal; color: #44bcff; }
+.intro > p:nth-of-type(2) { margin-top: 23px; max-width: 680px; font-size: 16px; line-height: 1.7; color: #c3d7ea; }
+.ctas { display: flex; gap: 14px; margin-top: 28px; flex-wrap: wrap; justify-content: center; }
+.ctas a { display: inline-flex; justify-content: center; align-items: center; gap: 16px; min-height: 46px; padding: 0 22px; border-radius: 5px; font-weight: 700; font-size: 13px; transition: background .2s, transform .2s; }
+.ctas a:hover { transform: translateY(-2px); }
+.primary { color: white; border: 1px solid #53c6ff; background: linear-gradient(120deg, #0079ec, #1646d5); box-shadow: 0 0 22px #0084ff55; }
+.primary:hover { background: var(--button-primary-hover); }
+.secondary { color: #deefff; border: 1px solid var(--button-secondary-border); background: #071324; }
+.secondary:hover { background: var(--button-secondary-hover); }
+.intro > div:last-child { width: 100%; margin-top: 55px; color: #6c8ba7; font-size: 9px; letter-spacing: 3px; }
+.intro > div:last-child span { color: #147cdc; margin: 0 16px; }
+.page main > section:not(:first-child) { padding: 76px clamp(22px, 6vw, 92px); border-top: 1px solid #123550; }
+.page main > section:not(:first-child) > div:first-child { max-width: 900px; margin-bottom: 34px; }
+.page h2 { margin: 14px 0; color: #f1f7ff; font-size: clamp(29px, 3.5vw, 46px); line-height: 1.15; letter-spacing: -1px; }
+.page h3 { color: #f6faff; font-size: 20px; margin: 10px 0; }
+.page main > section:not(:first-child) p:not(:first-child) { color: var(--text-secondary); font-size: 15px; line-height: 1.65; }
+.page #experiences > div:nth-child(2) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.page #experiences article,
+.page #platform article,
+.page #artists article { border: 1px solid #235176; border-radius: 8px; background: linear-gradient(155deg, #0e2945, #06111f 70%); padding: 25px; }
+.page #experiences article > div { font-size: 42px; color: #48beff; height: 65px; }
+.page article small { font-size: 10px; color: #64bffc; letter-spacing: 2px; }
+.page #platform { background: #050d18; }
+.page #platform > div:nth-child(2) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.page #platform article > div { font-size: 29px; color: #51bfff; }
+.page #artists { text-align: center; background: radial-gradient(ellipse at center, #0a3152, #050b16 70%); }
+.page #artists > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin: 40px auto 0; max-width: 1050px; text-align: left; }
+.page #artists article { padding: 35px; }
+.page #connect { text-align: center; background: linear-gradient(#05111e, #0b3155 60%, #06111d); }
+.page #connect h2, .page #connect > p:nth-of-type(2) { max-width: 850px; margin-left: auto; margin-right: auto; }
+.page footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 25px; border-top: 1px solid #2c5473; padding: 32px clamp(22px, 5vw, 80px); background: #02060d; }
+.page footer > a { flex-direction: row; align-items: center; gap: 8px; font-size: 19px; }
+.page footer > a small { letter-spacing: 2px; margin-top: 0; }
+.page footer p { font-size: 11px; color: #94afc4; }
+@media(max-width: 900px) {
+  .page header { flex-wrap: wrap; }
+  .page nav { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+  .page #experiences > div:nth-child(2) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .page #platform > div:nth-child(2) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media(max-width: 600px) {
+  .page header > a:last-child { display: none; }
+  .page nav { gap: 12px 20px; }
+  .intro { padding-top: 28px; }
+  .logo { margin: -10px 0 -20px; }
+  .intro > div:last-child { letter-spacing: 1px; line-height: 2; }
+  .intro > div:last-child span { margin: 0 3px; }
+  .page #experiences > div:nth-child(2),
+  .page #platform > div:nth-child(2),
+  .page #artists > div { grid-template-columns: 1fr; }
+  .page main > section:not(:first-child) { padding-top: 58px; padding-bottom: 58px; }
+}
