@@ -21,8 +21,21 @@ export function getDb(): Pool {
       throw new Error("DATABASE_URL is not configured");
     }
 
+    const ca = process.env.DB_CA_CERT?.replace(/\\n/g, "\n").trim();
+    if (!ca || !ca.includes("-----BEGIN CERTIFICATE-----") || !ca.includes("-----END CERTIFICATE-----")) {
+      throw new Error("DB_CA_CERT is missing or invalid");
+    }
+
+    // pg connection-string SSL options override the explicit CA settings.
+    // Remove only those URL options; keep credentials and all other parameters.
+    const databaseUrl = new URL(connectionString);
+    for (const key of ["sslmode", "sslrootcert", "sslcert", "sslkey"]) {
+      databaseUrl.searchParams.delete(key);
+    }
+
     pool = new Pool({
-      connectionString,
+      connectionString: databaseUrl.toString(),
+      ssl: { ca, rejectUnauthorized: true },
       max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
