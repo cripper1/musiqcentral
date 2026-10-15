@@ -1,8 +1,23 @@
 import "dotenv/config";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import { closeDb, setDbLogger } from "./db.js";
 
-const app = Fastify({ logger: true });
+const requestedLevel = process.env.LOG_LEVEL?.toLowerCase() ?? "error";
+const allowedLevels = ["silent", "fatal", "error", "warn", "info", "debug", "trace"];
+if (!allowedLevels.includes(requestedLevel)) {
+  throw new Error("LOG_LEVEL must be silent, fatal, error, warn, info, debug, or trace");
+}
+
+const app = Fastify({
+  logger: {
+    level: requestedLevel,
+    redact: ["req.headers.authorization", "req.headers.cookie", "res.headers.set-cookie"],
+  },
+  disableRequestLogging: true,
+});
+
+setDbLogger(app.log);
 
 async function start(): Promise<void> {
   const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
@@ -18,6 +33,10 @@ async function start(): Promise<void> {
     status: "ok",
     service: "musiqcentral-backend",
   }));
+
+  app.addHook("onClose", async () => {
+    await closeDb();
+  });
 
   const port = Number(process.env.PORT ?? 8080);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
