@@ -147,3 +147,13 @@ For any proposed framework, database, language, hosting, schema, or module-bound
 **Correction to earlier provisional choices:** Do not assume pgvector-first search; Pinecone is preferred for managed vector search if a vector service is needed. Mongo provider is open (DigitalOcean managed MongoDB versus Atlas). Avoid describing identity mapping as link to external `sub` inside PostgreSQL.
 
 **Next implementation gate:** integrate the first reviewed normalized data entity and a real authorized database operation using `backend/src/db.ts`, verify runtime dev credentials and privileges, and enforce backend endpoint authorization before any sensitive user or business data.
+
+## October 15, 2026 — Runtime logging policy and implementation
+
+**Implemented on GitHub `dev`:** Fastify's existing logger is the single backend logging facility; no extra logging dependency. `LOG_LEVEL` accepts `silent`, `fatal`, `error`, `warn`, `info`, `debug`, or `trace`; default `error` keeps normal operation quiet. `silent` disables logging. Automatic request completion logging is disabled even when log level is raised; add targeted domain diagnostics only where justified.
+
+`backend/src/db.ts` delegates to the Fastify logger for unexpected idle pool faults, failed parameterized queries and failed pool client checkout. DB log calls do not deliberately include SQL text, query parameters or database connection strings. Standard Fastify/Pino redaction rules cover common authorization/cookie fields; treat arbitrary error objects and operational logs as privileged, not public data. The API's clean shutdown closes its database pool.
+
+**Operations:** Set `LOG_LEVEL=error` for routine DEV; temporarily increase to `info` or `debug` to investigate a specific problem, then lower it. `LOG_LEVEL=silent` silences all logs and should only be used deliberately, since it suppresses error diagnosis too. Configure using hosting environment variables; never expose log level controls, logs or secrets to browser users. Log errors at meaningful authority, external integration and persistence boundaries, not every function call. Preserve correlation IDs and structured context when building new operations; avoid PII, tokens, request bodies, SQL parameters and excessive event volume. Future security audit events and mandatory operational evidence must be recorded separately from optional diagnostic logging.
+
+**Verification:** Source commits `04e8f54` (DB) and `890a61b` (API) are in `dev`. New logging changes still require local build and cloud deployment verification; do not equate committed code with deployed behavior.
