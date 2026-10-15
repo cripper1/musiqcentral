@@ -1,6 +1,13 @@
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import type { FastifyBaseLogger } from "fastify";
 
 let pool: Pool | undefined;
+let logger: Pick<FastifyBaseLogger, "error"> | undefined;
+
+/** Share Fastify’s configured logger; no independent console logging. */
+export function setDbLogger(appLogger: Pick<FastifyBaseLogger, "error">): void {
+  logger = appLogger;
+}
 
 /**
  * Shared PostgreSQL connection pool.
@@ -22,7 +29,7 @@ export function getDb(): Pool {
     });
 
     pool.on("error", (error: Error) => {
-      console.error("Unexpected idle PostgreSQL connection error", error);
+      logger?.error({ err: error }, "Unexpected idle PostgreSQL connection error");
     });
   }
 
@@ -34,12 +41,19 @@ export function query<T extends QueryResultRow = QueryResultRow>(
   sql: string,
   params: readonly unknown[] = [],
 ) {
-  return getDb().query<T>(sql, [...params]);
+  return getDb().query<T>(sql, [...params]).catch((error: unknown) => {
+    // Never log SQL text, parameters, or the database connection string.
+    logger?.error({ err: error }, "PostgreSQL query failed");
+    throw error;
+  });
 }
 
 /** Use a checked-out client when multiple statements require one transaction. */
 export function connectDb(): Promise<PoolClient> {
-  return getDb().connect();
+  return getDb().connect().catch((error: unknown) => {
+    logger?.error({ err: error }, "PostgreSQL connection checkout failed");
+    throw error;
+  });
 }
 
 /** Gracefully close the connection pool on application shutdown. */
