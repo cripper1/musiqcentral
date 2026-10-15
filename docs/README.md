@@ -7,7 +7,7 @@ GitHub is the authoritative working source for technical Markdown. Client-facing
 - `database/DATA_MODEL_PRINCIPLES.md` — approved role-aware party and 3NF design direction; no schema yet.
 - `integrations/` — future canonical interface contracts.
 
-**Pending:** Bring the October 13 current Functional + Technical Specification from Drive into canonical Markdown without losing its newer content, and bring the complete GNODI integration architecture into canonical Markdown. The older local DOCX is not a substitute for the newer Drive specification.
+**Specification:** `specifications/FUNCTIONAL_TECHNICAL_SPEC.md` is the canonical Markdown transcription of the October 13 living Word specification with an October 15 implementation addendum. Source Word tables were delivered as extracted text and need careful tabular formatting before refreshed client publication. **Pending:** bring the complete GNODI integration architecture into canonical Markdown.
 
 Do not treat a working proposal or pending-ratification Litepaper as a final requirement. Update canonical Markdown via normal Git review, then generate complete client-facing DOCX and PDF, keeping published versions distinguishable from working drafts.
 
