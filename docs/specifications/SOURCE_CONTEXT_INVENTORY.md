@@ -121,3 +121,18 @@ Block Reign's October 11 SSO document states **Musiq Network is the identity and
 - Approve initial transactional domain boundaries and event ingestion/retention stance.
 - Mark each proposed business entity **Confirmed / Working / Open**, with reference and decision owner.
 - **No DDL or migrations until explicit schema review.**
+
+## October 15, 2026 — Source reconciliation and verified implementation updates
+
+Latest engineering evidence from the repository `cripper1/musiqcentral` on branch `dev` and operator-verified cloud dashboards now supersedes older source-inventory statements about incomplete infrastructure:
+
+- Dedicated DEV Vercel app and custom domain `dev.musiqcentral.com` are verified. Vercel All Deployments authentication is enabled; this protects the frontend, not the backend API.
+- Dedicated DEV backend branch deployment at DigitalOcean and `https://api-dev.musiqcentral.com/health` are verified over HTTPS. No backend business endpoints or application-level authentication have been validated.
+- Separate `musiqcentral_dev` and `musiqcentral_staging` Postgres databases, with distinct application roles, exist on managed cluster `musiqcentral-pg`. Tested isolation is at CONNECT permission level; NOT full schema, runtime credential or operational integration validation.
+- Runtime `DATABASE_URL` was saved by the developer for DEV private DB access; no executed database query is evidenced.
+- `pg` and `@types/pg` dependencies committed to `dev` at `d6009de`; permanent pool, parameterized query helper and transaction client in `backend/src/db.ts` committed at `f21789f`; local compilation succeeded under Node 24.
+- DEV operational web/API infrastructure only; STAGING app and PROD app are NOT deployed.
+- Shadow identity separation is now a working architecture decision: external JWT issuer/`sub` resolves to once-generated random `shadow_id` in restricted MongoDB mapping A; `shadow_id` resolves to PostgreSQL `party_id` in restricted mapping B. Neither `sub` nor `shadow_id` belongs in application PostgreSQL. These mappings are planned, not implemented. Partner SSO contract remains to be confirmed.
+- No database tables created or live functional browser→API→database verification. First business implementation is still pending.
+
+**Corrections to older wording:** The former proposal to link external `sub` from PostgreSQL is superseded by the two-mapping boundary above; `musiqcentral` is not the active development database name; use `musiqcentral_dev`. Do not call staging deployed merely because its database exists. The October 13 Drive DOCX remains a published earlier working revision until separately updated. Source status is evidence-bounded: implemented / tested / working design / open / unapproved.
