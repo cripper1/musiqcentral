@@ -129,3 +129,21 @@ For any proposed framework, database, language, hosting, schema, or module-bound
 ---
 
 **Related working references:** `MusiQ_Central_Phase_1_Kickoff_Working_Guide.docx`, `MusiQ_Central_Functional_Technical_Spec_v0.1.docx`, `Music_Central_Gnodi_Integration_Architecture_v0.1_Updated.docx`, and the under-review MusIQ Network Litepaper v1.0. The Litepaper remains pending ratification.
+
+## 10. Verified development environment and implementation decisions (October 15, 2026)
+
+**Confirmed in GitHub and through operator-verified deployment screenshots:**
+- Branch `dev` is the development source; Vercel project `musiqcentral-dev` uses `dev` as its source branch and serves `https://dev.musiqcentral.com/preview`. Vercel **All Deployments** authentication was enabled and the user confirmed an unauthenticated browser was challenged. Vercel calls that project's branch deployment its internal "Production" environment; that is **not MusIQ's production environment**.
+- DigitalOcean App Platform service `musiqcentral-backend` was switched to `dev` with autodeploy enabled; `https://api-dev.musiqcentral.com/health` returned `{"status":"ok","service":"musiqcentral-backend"}` over HTTPS. The bare API root returning HTTP 404 is expected. **Backend endpoints are not secured by Vercel frontend authentication**; sensitive routes require independent authentication and authorization.
+- GoDaddy controls DNS. `dev` CNAME points to the Vercel-assigned domain; `api-dev` CNAME points to `musiqcentral-backend-6bya9.ondigitalocean.app`. No production apex/domain cutover was performed.
+- Managed DigitalOcean PostgreSQL 18 cluster `musiqcentral-pg` in NYC3 hosts separate `musiqcentral_dev` and `musiqcentral_staging` databases. Separate login roles `musiqcentral_dev_app` and `musiqcentral_staging_app` passed database-level CONNECT permission cross-checks. Schema-level permissions and live service queries remain untested. Production must use a distinct cluster when approved.
+- DigitalOcean backend `DATABASE_URL` was configured by the operator for the dedicated dev database/app role and private connection. **The runtime query is not yet verified.**
+- Developer workstation uses Node 24.22.0/npm 11.19.1. `pg` and `@types/pg` were added at commit `d6009de`. Reusable direct PostgreSQL driver module `backend/src/db.ts` (lazy connection pool, parameterized queries, transaction client, graceful close) added at `f21789f`; developer pulled it and ran a successful TypeScript build. No ORM or additional backend framework is intended; retain existing Fastify.
+- **DEV:** frontend and API domains working, frontend gated; app DB integration and API authorization outstanding. **STAGING:** separate database/role only; app deployment not started. **PROD:** not deployed.
+- No throwaway test routes or redundant testing infrastructure. Test database connectivity by integrating first durable real application feature; keep normal build checks. Do not claim a database query succeeded because compilation succeeded.
+
+**Explicit working design decision — identity privacy:** MusIQ Network's permanent externally verified JWT `sub` shall not be stored in application PostgreSQL. PostgreSQL holds only the internal `party_id` for core identity and relations. Separate access-restricted MongoDB mapping A resolves external (issuer, sub) to a cryptographically random, once-issued persistent `shadow_id`; separate mapping B resolves `shadow_id` to internal `party_id`. Subsequent logins resolve mappings exactly, optionally by keyed HMAC index for external lookup. No deterministic generation of shadow IDs from external identities, and no shadow ID in PostgreSQL. Design remains pending implementation, hardening, access boundaries, and authorization review.
+
+**Correction to earlier provisional choices:** Do not assume pgvector-first search; Pinecone is preferred for managed vector search if a vector service is needed. Mongo provider is open (DigitalOcean managed MongoDB versus Atlas). Avoid describing identity mapping as link to external `sub` inside PostgreSQL.
+
+**Next implementation gate:** integrate the first reviewed normalized data entity and a real authorized database operation using `backend/src/db.ts`, verify runtime dev credentials and privileges, and enforce backend endpoint authorization before any sensitive user or business data.
