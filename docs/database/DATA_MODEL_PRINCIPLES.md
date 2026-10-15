@@ -28,3 +28,17 @@ Design MusIQ Central as a platform rather than as a streaming-only application. 
 - Set naming conventions, nullability and effective-date rules by entity class, retention, audit, migration, indexing, and partitioning policies.
 
 **Do not execute CREATE TABLE statements until the source-grounded logical schema has been reviewed.**
+
+## October 15, 2026 — Identity and implementation clarification
+
+**Decided design boundary:** PostgreSQL business tables use the internal relational `party_id` only for party identity. They do **not** store MusIQ Network's external `sub` or the application `shadow_id`.
+
+Two independently restricted, exact-match MongoDB mappings are planned:
+1. Verified external MusIQ Network issuer + `sub` → persistent `shadow_id`.
+2. Persistent `shadow_id` → internal PostgreSQL `party_id`.
+
+Generate the shadow ID cryptographically once during first validated onboarding and persist it; subsequent login uses indexed deterministic **lookup**, not deterministic generation. Plan keyed HMAC indexes, unique keys, least-privilege access, encryption, idempotent onboarding and cross-store recovery. This design is approved as working architectural direction but is **not implemented**. External SSO authority/contract still requires partner confirmation.
+
+**Confirmed PostgreSQL infrastructure:** Managed PostgreSQL 18 cluster `musiqcentral-pg` houses `musiqcentral_dev` and `musiqcentral_staging`, with distinct `musiqcentral_dev_app` and `musiqcentral_staging_app` roles. Database-level CONNECT isolation was checked successfully. Schema grants and a runtime connection from the backend have **not** been verified, and no logical party schema/tables have been created.
+
+**Implementation method:** Direct parameterized SQL using `pg`; shared pool/query/client support in `backend/src/db.ts` (commit `f21789f`). Dependencies were committed in `d6009de`. The local TypeScript build passed with Node 24.22.0. No ORM, throwaway test endpoints or unnecessary additional frameworks. Verify DB access when building an actual reusable domain feature.
