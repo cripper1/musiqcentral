@@ -157,3 +157,25 @@ Before approving a new Authoritative Entity, document:
 **Design constraint:** Keep today's PostgreSQL implementation straightforward, normalized, modular, secure and portable. Avoid premature sharding, UUIDs on every table, unnecessary abstraction layers or vendor-specific infrastructure just to claim internet-scale readiness. Future partitioning is planned at the **Authoritative Entity** boundary and implemented only when justified and approved.
 
 **Review checklist extension:** Every proposed authoritative entity must include an **Ownership + Partitioning Outlook** describing its likely growth, stable identity, partition boundary, migration path and the conditions that would trigger distribution.
+
+### 13. Dual-Identifier, Context-Aware Relationship Standard
+
+**Approved design principle:** An Authoritative Entity requiring long-term global portability can carry two automatically generated, immutable identifiers:
+
+- **Local relational identity:** `BIGINT GENERATED ALWAYS AS IDENTITY`, ordinarily the PostgreSQL primary key, used for compact indexes, local foreign keys, joins and transactions.
+- **Global entity identity:** A separately generated `UUID` with an enforced uniqueness constraint, stable for external references, event contracts, relocation and independently owned data domains. PostgreSQL-native UUID generation is preferred; no additional framework is required.
+
+**Relationship selection follows the authority boundary:**
+
+1. Inside a single relational authority, use a `BIGINT` foreign key by default, with database-enforced referential integrity.
+2. Across separately owned databases, partitions, services, or external contracts, exchange a stable UUID; resolve to a local `BIGINT` when that domain maintains its own relational representation.
+3. A UUID may also be a valid FK target inside PostgreSQL when a documented local access pattern warrants it and a unique constraint backs the reference.
+4. Do **not** routinely duplicate both `party_id` and `party_guid` in every relationship row. Select the appropriate key for that relation and avoid redundant dual-FK consistency problems.
+5. Avoid assuming UUID uniqueness alone supplies shard placement, routing, cross-database referential enforcement, transaction atomicity or conflict resolution. Design partition ownership, mapping/routing and reconciliation independently.
+6. For identity distributed across regions or shards, a locally generated `BIGINT` is only local identity; never claim it remains globally unique across independent writers. A stable global UUID remains independent of changing local sequence values.
+7. Choose which entities need global references by actual expected portability/integration needs; small private lookup/reference tables need not receive UUID columns automatically.
+8. When implementing a new entity, review UUID generation strategy, uniqueness, immutability, exposure/privacy, collision handling, event contracts and indexing overhead. Use compact relational keys until measured growth justifies a different physical arrangement.
+
+**Rule of thumb:** `BIGINT` for efficient local relationships; UUID for globally portable identity and cross-authority references. **Design for both now where justified; operate a simple PostgreSQL deployment until scale demands distribution.**
+
+**Schema status:** This rule governs future designs; it does not authorize or create the Party schema or any other database objects.
