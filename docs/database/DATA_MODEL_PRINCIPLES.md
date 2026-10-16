@@ -136,3 +136,24 @@ Before approval, answer: **What business fact is stored? Who owns it? What ident
 A passing build does not prove database integrity. A successful startup `SELECT 1` proves connection/authentication/TLS/query execution, **not** table grants, authorization, schema correctness, transactions or functional end-to-end behavior.
 
 **Stop for architectural approval before executing the first Party schema DDL or introducing any database layer/framework.**
+
+### 12. Authoritative Entity: billion-user forward scalability
+
+**Governing rule: Build the foundation for a billion users. Deploy only what our first thousand users require.**
+
+An **Authoritative Entity** is a domain entity whose canonical identity, business facts, lifecycle, or decision authority is owned by an identified source of truth. For **every Authoritative Entity**, the schema/design review **must define an eventual ownership and partitioning strategy before its data volume becomes a scaling limitation**. This is a design obligation, **not** authorization to deploy sharding, extra clusters, microservices, or a distributed database prematurely.
+
+Before approving a new Authoritative Entity, document:
+
+1. **Authority and ownership:** Which module and store own the canonical record and its permitted mutations? Which other stores hold projections only?
+2. **Internal and external identity:** Define stable internal `BIGINT` keys for efficient relational operations where appropriate; separately define a globally unique opaque reference when cross-database, externally exchanged, or distributed identity requires one. Do not presume that a single database sequence generates globally unique identifiers across independently writable shards. Do not expose internal sequence IDs as universal distributed identity without explicit review.
+3. **Projected scale:** Estimate entity cardinality, related record volume, write/read throughput, peak-to-average traffic, retention, indexing and expected growth. State the assumptions and revisit them using operational evidence.
+4. **Future partition ownership:** Identify the likely partition/shard or workload boundary, routing/placement authority and rebalancing approach. Consider dominant query/transaction locality and avoid a design requiring routine distributed joins or transactions for core operations.
+5. **Relationship locality:** Identify references that must remain transactionally co-located, and relationships that can safely cross partitions using stable references, async events, reconciliation and explicit consistency contracts.
+6. **Evolution path:** Document how the initial normalized single-cluster design could evolve to partitioning, independent domain stores, replicas or services **without rewriting business identity and authority semantics**.
+7. **Security and continuity:** Define how access policy, tenant/party isolation, provenance, audit, recovery, idempotency and ownership survive migration and rebalancing.
+8. **Trigger and proof:** Specify measurable scaling signals (storage growth, index behavior, throughput, latency, pool/lock pressure) and migration test criteria. Partition only when evidence warrants the complexity.
+
+**Design constraint:** Keep today's PostgreSQL implementation straightforward, normalized, modular, secure and portable. Avoid premature sharding, UUIDs on every table, unnecessary abstraction layers or vendor-specific infrastructure just to claim internet-scale readiness. Future partitioning is planned at the **Authoritative Entity** boundary and implemented only when justified and approved.
+
+**Review checklist extension:** Every proposed authoritative entity must include an **Ownership + Partitioning Outlook** describing its likely growth, stable identity, partition boundary, migration path and the conditions that would trigger distribution.
