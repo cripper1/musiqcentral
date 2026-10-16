@@ -1,7 +1,7 @@
 # MusIQ Central — Data Model Principles
 
-**Status:** Approved structural direction; logical schema pending source reconciliation and review.  
-**Date:** 2026-10-14  
+**Status:** Governing database engineering standards; logical schema and DDL require separate approval.  
+**Updated:** 2026-10-15  
 **Sources:** MusIQ Central architecture discussion and source inventory (`../specifications/SOURCE_CONTEXT_INVENTORY.md`).
 
 ## Governing principle
@@ -39,6 +39,100 @@ Two independently restricted, exact-match MongoDB mappings are planned:
 
 Generate the shadow ID cryptographically once during first validated onboarding and persist it; subsequent login uses indexed deterministic **lookup**, not deterministic generation. Plan keyed HMAC indexes, unique keys, least-privilege access, encryption, idempotent onboarding and cross-store recovery. This design is approved as working architectural direction but is **not implemented**. External SSO authority/contract still requires partner confirmation.
 
-**Confirmed PostgreSQL infrastructure:** Managed PostgreSQL 18 cluster `musiqcentral-pg` houses `musiqcentral_dev` and `musiqcentral_staging`, with distinct `musiqcentral_dev_app` and `musiqcentral_staging_app` roles. Database-level CONNECT isolation was checked successfully. Schema grants and a runtime connection from the backend have **not** been verified, and no logical party schema/tables have been created.
+**Confirmed PostgreSQL infrastructure:** Managed PostgreSQL 18 cluster `musiqcentral-pg` houses `musiqcentral_dev` and `musiqcentral_staging`, with distinct `musiqcentral_dev_app` and `musiqcentral_staging_app` roles. Database-level CONNECT isolation was checked successfully. Schema/object grants have **not** been verified and no logical party schema/tables have been created. Subsequently, the NYC3 cluster was relocated to NYC1; deployment of backend commit `fe02cf4` succeeded and its mandatory startup `SELECT 1` establishes verified DEV database connectivity with TLS.
 
 **Implementation method:** Direct parameterized SQL using `pg`; shared pool/query/client support in `backend/src/db.ts` (commit `f21789f`). Dependencies were committed in `d6009de`. The local TypeScript build passed with Node 24.22.0. No ORM, throwaway test endpoints or unnecessary additional frameworks. Verify DB access when building an actual reusable domain feature.
+
+## Database engineering standards — standing rules (October 15, 2026)
+
+These govern all PostgreSQL schemas and SQL code. **Modular, scalable, maintainable, portable, secure, forward-thinking, with no unnecessary frameworks or operational overhead.** Prefer PostgreSQL-standard facilities and straightforward SQL over added runtime layers. Do not implement a new technology simply to comply with a theoretical pattern.
+
+### 1. Domain boundaries and normalized ownership
+
+- Separate identity/party, profile/channel, catalog/recording, rights, CRM, commerce, rewards and settlement into cohesive domain-owned structures. Define contracts between them and avoid circular ownership; a modular monolith with one database is acceptable.
+- 3NF is the default for authoritative OLTP. One business fact has one authoritative storage location. Distinguish canonical state, derived projections, caches and immutable evidence.
+- Choose entity boundaries by business meaning; do not use polymorphic catch-all tables, generic entity-attribute-value storage, JSON blobs or duplicate portal-specific copies as shortcuts around relational design.
+- Preserve a reusable Party/person/organization/role/relationship core. Party roles are contextual and time/scope dependent, not hard-coded mutually exclusive identities.
+- No implementation of unapproved business capabilities merely to prepare for possible future portals. Establish extension seams, not empty speculative modules.
+
+### 2. Naming and structure
+
+- Use **lowercase `snake_case`** unquoted SQL identifiers. Tables: descriptive singular entity nouns (e.g., `party`, `party_role`); junctions: meaningful named relationships. Columns: business-descriptive, avoid unexplained abbreviations.
+- Primary key convention: `<table_name>_id` where sensible; foreign keys use referenced entity identifier (`party_id`), with explicit role qualifiers when multiple links reference the same entity (e.g., `created_by_party_id`).
+- Name constraints and indexes predictably: `pk_<table>`, `fk_<table>_<relationship>`, `uq_<table>_<meaning>`, `ck_<table>_<rule>`, `idx_<table>_<access_pattern>`. PostgreSQL's generated names may be used for obvious PKs if the resulting convention remains consistent.
+- Use schemas only when real ownership, access control or organizational boundaries justify them; do not introduce one schema per small module reflexively.
+- No quoted mixed-case identifiers, needless prefixes, unnecessary synonyms or confusing overloaded columns.
+
+### 3. Data types, identity and nullability
+
+- Prefer `BIGINT GENERATED ALWAYS AS IDENTITY` surrogate keys for internal entities, with unique business keys when one exists. Distributed/external references can use immutable UUIDs or other explicitly reviewed types; never use titles, email or mutable labels as identities.
+- Prefer `TEXT` for unrestricted textual attributes and `VARCHAR(n)` only when a meaningful limit is part of the domain contract; apply explicit validation at input boundaries.
+- Use `NUMERIC(precision, scale)` for financial and exact-valued quantities; define currency units, rounding behavior, scale and constraints per domain. Never use binary floating point for money.
+- Use `BOOLEAN` for genuinely binary facts. Use reference tables or reviewed check constraints for meaningful statuses that require lifecycle/governance; avoid magic numbers.
+- Use `TIMESTAMPTZ` for instants (UTC application convention), `DATE` for actual calendar dates, and `TIMESTAMP` without zone only for justified wall-clock cases with specified timezone semantics.
+- Specify `NOT NULL` for required attributes. Nullable fields require a defined meaning; distinguish unavailable, not applicable and not yet known when business logic requires it.
+- Define safe defaults only when universal and semantically correct, not to conceal incomplete data. Use appropriate sizes and CHECK constraints, not arbitrarily huge types.
+
+### 4. Temporal and historical truth
+
+- Define `begin_date`, `end_date`, `update_date` according to the approved semantics of each entity; do not stamp them onto immutable records where they do not belong.
+- Distinguish effective time from system creation, update, arrival and processing time. Use half-open effective intervals **[begin, end)** where appropriate and enforce non-overlap when required.
+- Rights, organization authority, memberships, and other historical relationships must support changes without overwriting material history. Event/ledger evidence remains append-only with corrections/reversals rather than destructive rewrites.
+- Timestamps must be generated consistently; never infer exact order or causality from client clock timestamps alone.
+
+### 5. Referential integrity and constraints
+
+- Implement validated primary keys, foreign keys, meaningful `UNIQUE` constraints, check constraints, and appropriate referential actions.
+- Never rely solely on an API or UI to protect relational integrity. Define behavior for delete/restrict/cascade deliberately; avoid automatic cascades through financial, rights, audit or other consequential records.
+- Use transaction-safe uniqueness to eliminate duplicate records under concurrency; review unique-index treatment of nullable and effective-dated relationships.
+- Do not create unapproved tables or run irreversible DDL based on inference.
+
+### 6. SQL access, transactions and boundaries
+
+- Use `backend/src/db.ts` and the existing `pg` pool. Parameterize **all data values**. SQL identifiers cannot be parameterized: select them from an explicit allowlist if dynamic identifiers are genuinely required.
+- Use explicit `BEGIN`/`COMMIT`/`ROLLBACK` on a **single checked-out client** for related writes. Never call pool-level `query()` to perform separate statements inside a transaction.
+- Keep transaction duration short; do not hold relational locks while calling remote services. Use durable intent/outbox and reconciliation at cross-system boundaries when needed, subject to reviewed requirements.
+- Use `RETURNING` for generated keys and updated values where appropriate. Check affected row counts for updates/deletes where optimistic concurrency or strict transitions apply.
+- Specify statement/lock timeouts appropriate to workloads; bound retries, handle deadlock/serialization failures intentionally, and release clients in `finally`.
+- Keep database errors internal and sanitized; diagnostics must not contain connection strings, query parameters, secrets or sensitive PII.
+
+### 7. Indexes, access patterns and scale
+
+- Every proposed index must serve a documented lookup, join, uniqueness or ordering requirement. Index foreign keys where access patterns warrant it; avoid redundant indexes that slow writes.
+- Use bounded result sets and stable pagination; prefer keyset pagination for high-volume feeds where appropriate.
+- Watch for N+1 query patterns and unbounded scans. Examine `EXPLAIN (ANALYZE, BUFFERS)` on safe representative test workloads before major performance changes.
+- Normalize authoritative writes first. Add materialized projections, caches, partitions, read replicas or specialized search only when workload evidence and recovery plans justify the added complexity.
+- Store large audio/video binaries outside PostgreSQL; only metadata, integrity references, rights, and publication state belong in core relational tables.
+- For high-volume event streams, decide partition/retention and asynchronous ingestion from realistic volume projections, not assumed complexity.
+
+### 8. Security, privileges and TLS
+
+- Separate DEV, STAGING and PROD databases and least-privilege application roles; PROD must use separately approved resources. No application superuser, `CREATEDB`, `CREATEROLE` or schema ownership by default.
+- Separate migration/DDL privileges from runtime DML roles. Grant only needed `CONNECT`, `USAGE`, table/view/sequence operations, and review default privileges for newly created objects.
+- Enforce PostgreSQL TLS with a trusted CA and `rejectUnauthorized: true`. Keep credentials and certificates in environment secret management, not source control.
+- Do not place network `sub`, `shadow_id`, JWTs, passwords or wallet private keys in the authoritative PostgreSQL Party schema; follow the approved two-stage mapping boundary.
+- Define row/object-level access in backend authority logic. Use native database row-level security only after assessing actual trust boundaries and maintenance tradeoffs.
+- Do not treat a private network, frontend login restriction, or TLS alone as sufficient authorization for sensitive data.
+
+### 9. Migration and release control
+
+- Migrations are reviewed, versioned SQL scripts in source control when migrations begin; choose the simplest maintainable execution method compatible with deployment and approvals. **No ORM or heavy migration framework by default.**
+- Every migration proposal includes motivation, schema diff, data impact, privileges, expected lock/downtime behavior, validation SQL, deployment order and rollback/forward-fix.
+- Prefer additive expand/migrate/contract changes; avoid dropping/renaming in-use columns without coordinated consumers and data preservation plans.
+- Never run application-driven automatic DDL on server startup. Separate authorized schema deployment from ordinary API startup and connection verification.
+- Apply to DEV first with representative data; validate constraints, indexes, privileges and real application queries. Later STAGING/PROD only through independently approved promotion.
+
+### 10. Availability, recoverability and lifecycle
+
+- Define backup retention, tested restore, recovery-point/recovery-time needs, integrity checks and disaster-recovery ownership before storing sensitive production data.
+- For cross-system facts, record authoritative owners, reconciliation keys, event/result provenance and correction mechanisms. Never assume atomic transactions across PostgreSQL, MongoDB and blockchain systems.
+- Plan retention, privacy erasure, archival, legal obligations and immutable evidence requirements explicitly, with owner approval.
+- Avoid permanent connections per request and unnecessary polling. Size the pool for instance count, DB connection limits and workload rather than using arbitrary large defaults.
+
+### 11. Review checklist for each new entity or SQL operation
+
+Before approval, answer: **What business fact is stored? Who owns it? What identifier is immutable? What are the unique and foreign-key rules? What are nullable and temporal semantics? Which roles may read or write? What happens under retries and concurrency? What is the expected query shape and index? What transaction and error behavior apply? How will the change migrate, be verified, and be recovered?**
+
+A passing build does not prove database integrity. A successful startup `SELECT 1` proves connection/authentication/TLS/query execution, **not** table grants, authorization, schema correctness, transactions or functional end-to-end behavior.
+
+**Stop for architectural approval before executing the first Party schema DDL or introducing any database layer/framework.**
