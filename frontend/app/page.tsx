@@ -63,7 +63,8 @@ export default function Home() {
         <div className={styles.heroInner}>
           <p className={styles.heroEyebrow}>ONE PLATFORM. A WORLD OF MUSIQ.</p>
           <div className={styles.heroLogo}><Image src="/musiq-central-logo.png" alt="MusIQ Central" width={1448} height={1086} priority unoptimized /></div>
-          <h1 id="hero-title">The Smarter Way to <span>Listen, Watch &amp; Experience</span> Music and More.</h1>
+          <h1 id="hero-title" className={styles.heroTagline}>Same Music. <span>New System.</span></h1>
+          <p className={styles.heroSubhead}>The Smarter Way to <strong>Listen, Watch &amp; Experience</strong> Music and More.</p>
           <p className={styles.heroDescription}>MusIQ Central™ brings artists, fans, music, video, live experiences and community together in one connected destination.</p>
           <div className={styles.buttons}>
             <a className={styles.buttonPrimary} href="#platform">Explore the Platform <span aria-hidden="true">→</span></a>
