@@ -106,3 +106,56 @@ Wait for explicit approval before writing. Approval for one change is not blanke
 **Discuss → Explain mechanisms → Approve → Implement on `dev` → Inspect differences → Build/test → Verify deployed behavior → Update documentation.**
 
 The architect retains technical decision authority. The assistant implements agreed changes, explains them clearly, and does not change architecture quietly.
+
+## 11. Contract-first development
+Define module, API, event and provider interface contracts before implementation: inputs, outputs, validation, authority, error results, timeouts, compatibility and versioning. Keep provider-specific details behind replaceable adapters.
+
+## 12. Explicit state machines
+Consequential entities require named states, allowed transitions, authorized actors, preconditions, transactional effects, evidence and recovery. Do not derive authoritative lifecycle state from collections of unrelated flags. Draft examples are not approved business rules.
+
+## 13. Transactions and concurrency
+Related relational changes succeed or fail atomically using explicit PostgreSQL transactions; rollback on failure. Do not hold transactions open across external requests. Enforce constraints and use version checks, locks or appropriate isolation against duplicate creations and lost updates. Cross-store operations need durable recovery and reconciliation, not claims of distributed atomicity.
+
+## 14. Idempotency
+Retryable consequential operations—including webhooks, payments, rights changes, rewards and settlement—must have defined idempotency keys, duplicate suppression and outcome recording. Timeouts may represent uncertain success; reconcile before repeating an external effect.
+
+## 15. Data ownership and provenance
+Identify the authoritative system and update authority for every consequential fact, plus source, provenance, correction, retention and exposure rules. Preserve necessary immutable evidence while respecting authorized deletion and privacy requirements. Avoid competing sources of truth.
+
+## 16. Backward compatibility
+Evolve APIs, durable events and database schemas additively by default. Use expand/migrate/contract migrations and versioned payloads as needed. Document deployment ordering, impact, rollback or forward-fix before breaking or destructive changes.
+
+## 17. Temporal correctness
+Store instants as timezone-aware UTC timestamps; convert for local presentation. Distinguish occurrence, receipt, processing and business-effective time. Define effective-date intervals, expiry, clock skew and historical relationship semantics explicitly.
+
+## 18. Operational observability
+Use structured, bounded error diagnostics with stable correlation IDs and actionable metrics for critical operations and dependencies. Avoid high-volume routine tracing, secrets, PII or SQL parameters in logs. Permanent audit evidence remains independent of optional diagnostic verbosity.
+
+## 19. Resource and performance bounds
+Apply deliberate request and query timeouts, database pool limits, pagination, rate limits, payload limits, backpressure and bounded concurrency. Avoid N+1 queries and unbounded scans. Index for real access patterns; measure before adding caching, denormalization, queues or new services. Keep authoritative OLTP normalized.
+
+## 20. Recovery and data lifecycle
+Specify error contracts for validation failure, outage, partial external effects and ambiguous outcomes. Plan backup, restore testing, retention, archival, privacy erasure and disaster recovery according to data sensitivity and approved service requirements. Never silently drop consequential events or errors.
+
+## 21. Dependencies and supply chain
+Add dependencies only when justified; review maintenance, licensing, vulnerability and portability impact. Maintain lockfiles and supported runtime versions, preserve reproducibility, and avoid unreviewed upgrades or unnecessary frameworks.
+
+## 22. Measurable portability
+Business logic, identity authority, rights and state transitions must not rely on a specific hosting vendor or provider-specific SDK. Identify the exact adapters, configuration, migration and deployment work needed to replace infrastructure or external services. Document and approve unavoidable lock-in.
+
+## 23. Engineering invariants — always enforced
+1. No protected business operation without verified backend authority.
+2. No consequential effect without traceable outcome and durable evidence.
+3. No duplicate financial, rights, reward or settlement effect on retry or duplicate event.
+4. No external identity or Shadow ID in authoritative PostgreSQL Party data.
+5. No partial commit of an atomic relational operation.
+6. No external system implicitly owns authoritative internal business state.
+7. No silent loss of consequential data, events, errors or recovery intent.
+8. No claim of tested deployment or integration without runtime evidence.
+9. No passwords, credentials, PII or sensitive SQL parameters in logs or public errors.
+10. No execution when required authority, policy or evidence is absent or invalid.
+11. No unapproved destructive migration, contract break, production change or publication.
+12. No design that needlessly sacrifices modularity, scalability, maintainability, portability, security or forward-thinking evolution.
+13. Turning diagnostic logging off must never disable mandatory security or business audit evidence.
+
+When an implementation threatens an invariant, stop, explain the conflict and redesign before modifying code.
