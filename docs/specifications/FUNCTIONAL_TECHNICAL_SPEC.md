@@ -695,3 +695,12 @@ Update this specification as discovery and implementation produce evidence. Do n
 
 ### Change control
 This is an engineering implementation update, not client approval of unresolved economics, membership tiers, blockchain protocol details, rights, or monetization. The MusIQ Network Litepaper remains under review. Record client approvals against named decisions and retain historical requirements when superseded.
+
+
+## October 21, 2026 — Registration, Identity, and Evolving Roles
+
+**Decision:** Initial registration establishes a person Party and an application Account, not a required artist/fan/manager classification. Business roles can be added and held concurrently as participation develops. Authorization, channel control, rights, and reward eligibility are distinct decisions; selecting a role does not grant them. An external identity mapping is required to reconcile MusIQ Central participants with MusIQ Network without storing external `sub` or `shadow_id` in PostgreSQL.
+
+**Stakeholder explanation, worked examples, database ownership, and open MusIQ Network/LYRIQ/GNODI questions:** [Registration, Identity, and Evolving Roles](../architecture/REGISTRATION_IDENTITY_AND_ROLES.md).
+
+**Implementation status:** DEV PostgreSQL migrations 001 (five schemas and 16 tables) and 002 (17 reference rows) were applied manually and confirmed in DBeaver on October 21, 2026. Identity-provider integration, restricted MongoDB mappings, registration endpoint, and role/authority workflows are not yet implemented. This dated update supersedes earlier implementation-status statements that no application tables had been created.
