@@ -18,7 +18,7 @@ export default function RegisterPage() {
     setWorking(true);
     setMessage("");
     try {
-      const response = await fetch("/api/register", {
+      const response = await fetch("/api/registration", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: name.trim(), email: email.trim(), decision }),
