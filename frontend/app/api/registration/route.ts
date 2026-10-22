@@ -1,32 +1,45 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
-  const api = process.env.MUSIQ_BACKEND_URL;
-  if (!api) return NextResponse.json({ message: "Registration is not yet connected to the MusIQ Central service." }, { status: 503 });
-  let assertion: unknown;
-  try {
-    const body: unknown = await request.json();
-    if (!body || typeof body !== "object" || !("assertion" in body)) throw new Error("Invalid request");
-    assertion = body.assertion;
-  } catch {
-    return NextResponse.json({ message: "Invalid registration request." }, { status: 400 });
+  const backend = process.env.MUSIQ_BACKEND_URL;
+  const secret = process.env.DEV_REGISTRATION_SECRET;
+  if (!backend || !secret || process.env.MUSIQ_ENV !== "development" || process.env.ENABLE_DEV_REGISTRATION !== "true") {
+    return NextResponse.json({ message: "Registration provider is not configured." }, { status: 503 });
   }
-  if (typeof assertion !== "string" || assertion.length > 8192 || !assertion.trim()) {
-    return NextResponse.json({ message: "A valid sign-in assertion is required." }, { status: 400 });
+  let body: unknown;
+  try { body = await request.json(); } catch { return NextResponse.json({ message: "Invalid request." }, { status: 400 }); }
+  if (!body || typeof body !== "object" || !("name" in body) || !("email" in body) || !("decision" in body)) {
+    return NextResponse.json({ message: "Invalid registration fields." }, { status: 400 });
   }
   try {
-    const response = await fetch(new URL("/registration", api), {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ assertion }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(12000),
+    const upstream = await fetch(new URL("/dev/onboarding", backend), {
+      method: "POST", headers: { "content-type": "application/json", "x-dev-registration-secret": secret },
+      body: JSON.stringify(body), cache: "no-store", signal: AbortSignal.timeout(20000),
     });
-    return NextResponse.json(
-      { message: response.ok ? "Your MusIQ Central account is ready." : "Registration could not be completed. Please try again." },
-      { status: response.ok ? 200 : response.status >= 500 ? 503 : 400 },
-    );
+    const data = await upstream.json();
+    if (!upstream.ok) return NextResponse.json(data, { status: upstream.status });
+    const { sessionToken, expiresAt, ...publicResult } = data;
+    if (typeof sessionToken !== "string" || typeof expiresAt !== "string") throw new Error("Missing session");
+    const result = NextResponse.json(publicResult, { headers: { "cache-control": "no-store" } });
+    result.cookies.set("musiq_session", sessionToken, { httpOnly: true, secure: true, sameSite: "lax", path: "/", expires: new Date(expiresAt) });
+    return result;
   } catch {
-    return NextResponse.json({ message: "Registration service is temporarily unavailable." }, { status: 503 });
+    return NextResponse.json({ message: "Registration backend unavailable or session creation failed." }, { status: 503 });
   }
+}
+
+export async function GET() {
+  const backend = process.env.MUSIQ_BACKEND_URL;
+  const secret = process.env.DEV_REGISTRATION_SECRET;
+  const token = (await cookies()).get("musiq_session")?.value;
+  if (!backend || !secret || !token) return NextResponse.json({ signedIn: false }, { status: 401 });
+  try {
+    const upstream = await fetch(new URL("/dev/session", backend), {
+      headers: { "x-dev-registration-secret": secret, "x-dev-session": token },
+      cache: "no-store", signal: AbortSignal.timeout(12000),
+    });
+    if (!upstream.ok) return NextResponse.json({ signedIn: false }, { status: 401 });
+    return NextResponse.json(await upstream.json(), { headers: { "cache-control": "no-store" } });
+  } catch { return NextResponse.json({ signedIn: false }, { status: 503 }); }
 }
