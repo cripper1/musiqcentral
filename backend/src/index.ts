@@ -2,6 +2,7 @@ import "dotenv/config";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { closeDb, query, setDbLogger } from "./db.js";
+import { closeIdentityDb, getIdentityDb } from "./identity-db.js";
 
 const requestedLevel = process.env.LOG_LEVEL?.toLowerCase() ?? "error";
 const allowedLevels = ["silent", "fatal", "error", "warn", "info", "debug", "trace"];
@@ -35,7 +36,7 @@ async function start(): Promise<void> {
   }));
 
   app.addHook("onClose", async () => {
-    await closeDb();
+    await Promise.all([closeDb(), closeIdentityDb()]);
   });
 
   const port = Number(process.env.PORT ?? 8080);
@@ -46,6 +47,8 @@ async function start(): Promise<void> {
   // Fail closed: do not serve API traffic without its authoritative database.
   await query("SELECT 1");
   app.log.info("PostgreSQL startup connection verified");
+  await getIdentityDb();
+  app.log.info("MongoDB identity vault startup connection verified");
 
   await app.listen({ port, host: "0.0.0.0" });
 }
