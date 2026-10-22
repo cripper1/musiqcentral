@@ -6,6 +6,7 @@ import { closeIdentityDb, getIdentityDb } from "./identity-db.js";
 import { resolveShadowId } from "./identity-mapping.js";
 import { RegistrationProvisioningService } from "./identity/registration-service.js";
 import { MusiqNetworkJwtVerifier } from "./identity/musiq-sso-verifier.js";
+import { registerDevRegistration } from "./identity/dev-registration.js";
 
 const requestedLevel = process.env.LOG_LEVEL?.toLowerCase() ?? "error";
 const allowedLevels = ["silent", "fatal", "error", "warn", "info", "debug", "trace"];
@@ -33,6 +34,7 @@ async function start(): Promise<void> {
     origin: allowedOrigins.length > 0 ? allowedOrigins : false,
   });
 
+  registerDevRegistration(app);
   const registration = new RegistrationProvisioningService({ resolveOrCreate: resolveShadowId });
   const verifier = new MusiqNetworkJwtVerifier();
 
