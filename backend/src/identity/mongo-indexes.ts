@@ -10,6 +10,12 @@ async function main(): Promise<void> {
   await db.collection("external_identity_mapping").createIndex(
     { shadow_id: 1 }, { unique: true, name: "uq_external_shadow_id" },
   );
+  await db.collection("registration_locks").createIndex(
+    { shadow_id: 1 }, { unique: true, name: "uq_registration_lock" },
+  );
+  await db.collection("registration_locks").createIndex(
+    { expires_at: 1 }, { expireAfterSeconds: 0, name: "ttl_registration_lock" },
+  );
   await db.collection("sso_assertion_replay").createIndex(
     { replay_key: 1 }, { unique: true, name: "uq_sso_replay_key" },
   );
