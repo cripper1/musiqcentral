@@ -8,14 +8,11 @@ export async function POST(request: Request) {
   const access = process.env.DEV_DEMO_ACCESS_KEY;
   if (!backend || !secret || !access) return NextResponse.json({ message: "DEV backend not configured." }, { status: 503 });
   if (request.headers.get("x-demo-access-key") !== access) return NextResponse.json({ message: "Invalid demo access key." }, { status: 403 });
-  let body: { outcome?: unknown };
-  try { body = await request.json(); } catch { return NextResponse.json({ message: "Invalid request." }, { status: 400 }); }
-  if (body?.outcome !== "success" && body?.outcome !== "failure") return NextResponse.json({ message: "Invalid outcome." }, { status: 400 });
   try {
     const response = await fetch(new URL("/dev/registration", backend), {
       method: "POST",
       headers: { "content-type": "application/json", "x-dev-registration-secret": secret },
-      body: JSON.stringify({ outcome: body.outcome }),
+      body: JSON.stringify({}),
       signal: AbortSignal.timeout(15000),
       cache: "no-store",
     });
