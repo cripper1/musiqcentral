@@ -3,6 +3,9 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { closeDb, query, setDbLogger } from "./db.js";
 import { closeIdentityDb, getIdentityDb } from "./identity-db.js";
+import { resolveShadowId } from "./identity-mapping.js";
+import { RegistrationProvisioningService } from "./identity/registration-service.js";
+import { MusiqNetworkJwtVerifier } from "./identity/musiq-sso-verifier.js";
 
 const requestedLevel = process.env.LOG_LEVEL?.toLowerCase() ?? "error";
 const allowedLevels = ["silent", "fatal", "error", "warn", "info", "debug", "trace"];
@@ -28,6 +31,25 @@ async function start(): Promise<void> {
 
   await app.register(cors, {
     origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+  });
+
+  const registration = new RegistrationProvisioningService({ resolveOrCreate: resolveShadowId });
+  const verifier = new MusiqNetworkJwtVerifier();
+
+  app.post("/registration", {
+    bodyLimit: 12_000,
+    schema: { body: { type: "object", additionalProperties: false, required: ["assertion"], properties: { assertion: { type: "string", minLength: 1, maxLength: 8192 } } } },
+  }, async (request, reply) => {
+    const body = request.body as { assertion: string };
+    try {
+      const verified = await verifier.verify(body.assertion);
+      const result = await registration.provision(verified);
+      app.log.info({ accountId: result.accountId, created: result.created }, "Registration completed");
+      return reply.code(200).send({ message: "Your MusIQ Central account is ready.", created: result.created });
+    } catch (error) {
+      app.log.error({ err: error, requestId: request.id }, "Registration failed");
+      return reply.code(400).send({ message: "Registration could not be completed. Please retry or contact support.", requestId: request.id });
+    }
   });
 
   app.get("/health", async () => ({
