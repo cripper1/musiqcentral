@@ -5,7 +5,7 @@ import { RegistrationProvisioningService } from "./registration-service.js";
 import { query } from "../db.js";
 import { getIdentityDb } from "../identity-db.js";
 
-/** Real DEV database writes; ONLY the external network response is simulated. */
+/** Real DEV database writes; No external provider or rewards are claimed. */
 export function registerDevRegistration(app: FastifyInstance): void {
   if (process.env.MUSIQ_ENV !== "development" || process.env.ENABLE_DEV_REGISTRATION !== "true") return;
   const secret = process.env.DEV_REGISTRATION_SECRET;
@@ -13,12 +13,11 @@ export function registerDevRegistration(app: FastifyInstance): void {
   const registration = new RegistrationProvisioningService({ resolveOrCreate: resolveShadowId });
   app.post("/dev/registration", {
     bodyLimit: 2048,
-    schema: { body: { type: "object", additionalProperties: false, required: ["outcome"], properties: { outcome: { type: "string", enum: ["success", "failure"] } } } },
+    schema: { body: { type: "object", additionalProperties: false, properties: {} } },
   }, async (request, reply) => {
     const supplied = request.headers["x-dev-registration-secret"];
     if (typeof supplied !== "string" || Buffer.byteLength(supplied) !== Buffer.byteLength(secret) ||
       !timingSafeEqual(Buffer.from(supplied), Buffer.from(secret))) return reply.code(404).send({ message: "Not found" });
-    const body = request.body as { outcome: "success" | "failure" };
     const demoId = randomUUID();
     const identity = { issuer: "musiqcentral:dev-demo", subject: demoId };
     try {
@@ -37,9 +36,8 @@ export function registerDevRegistration(app: FastifyInstance): void {
       return reply.send({
         demoId, partyId: result.partyId, accountId: result.accountId,
         database: { postgres: "verified", mongo: "verified", account: "active" },
-        external: { simulated: true, success: body.outcome === "success", exampleLyriq: body.outcome === "success" ? 5 : 0 },
-        message: body.outcome === "success" ? "Registration verified. Simulated external integration succeeded." :
-          "Registration verified. Simulated external integration failed; no tokens awarded.",
+        external: { status: "not_connected" },
+        message: "Registration written and verified in DEV PostgreSQL and MongoDB. External integration is not connected.",
       });
     } catch (error) {
       app.log.error({ err: error, requestId: request.id, demo: true }, "DEV registration failed");
