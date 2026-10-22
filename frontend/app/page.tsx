@@ -54,6 +54,7 @@ export default function Home() {
           <a href="#rewards">Rewards</a>
           <a href="#about">About</a>
           <a href="#contact">Contact</a>
+          <a href="/register">Join / Sign in</a>
         </nav>
       </div>
     </header>
@@ -68,7 +69,7 @@ export default function Home() {
           <p className={styles.heroDescription}>MusIQ Central™ brings artists, fans, music, video, live experiences and community together in one connected destination.</p>
           <div className={styles.buttons}>
             <a className={styles.buttonPrimary} href="#platform">Explore the Platform <span aria-hidden="true">→</span></a>
-            <a className={styles.buttonOutline} href="#journey">See the Experience <span aria-hidden="true">→</span></a>
+            <a className={styles.buttonOutline} href="/register">Join MusIQ Central <span aria-hidden="true">→</span></a>
           </div>
         </div>
       </section>
