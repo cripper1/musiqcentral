@@ -33,7 +33,7 @@ export function registerDevOnboarding(app: FastifyInstance): void {
     const input = request.body as Body;
     const name = input.name.trim();
     const email = input.email.trim().toLowerCase();
-    if (!name || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return reply.code(400).send({ message: "Valid name and email are required." });
+    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply.code(400).send({ message: "Valid name and email are required." });
     if (input.decision === "denied") return reply.code(403).send({ message: "DEV identity provider denied the request.", demo: { provider: "simulated", identity: "denied" } });
     try {
       const subject = emailSubject(email);
