@@ -10,6 +10,12 @@ async function main(): Promise<void> {
   await db.collection("external_identity_mapping").createIndex(
     { shadow_id: 1 }, { unique: true, name: "uq_external_shadow_id" },
   );
+  await db.collection("registration_intents").createIndex(
+    { shadow_id: 1 }, { unique: true, name: "uq_registration_intent_shadow" },
+  );
+  await db.collection("registration_intents").createIndex(
+    { provisioning_key: 1 }, { unique: true, name: "uq_registration_intent_key" },
+  );
   await db.collection("registration_locks").createIndex(
     { shadow_id: 1 }, { unique: true, name: "uq_registration_lock" },
   );
