@@ -17,7 +17,18 @@ export class PostgresPartyAccountRepository implements PartyAccountRepository {
     return row ? { partyId: row.party_id, accountId: row.account_id, status: row.status, provisioningState: row.provisioning_state } : null;
   }
 
-  async createPersonAccount(): Promise<{ partyId: PartyId; accountId: AccountId }> {
+  async findByProvisioningKey(key: string): Promise<{ partyId: PartyId; accountId: AccountId; status: string; provisioningState: string | null } | null> {
+    const result = await query<AccountRow>(
+      `SELECT a.party_id::text, a.account_id::text, s.code AS status, p.state AS provisioning_state
+       FROM iam.account_provisioning p JOIN iam.account a ON a.account_id = p.account_id
+       JOIN iam.account_status s ON s.status_id = a.status_id
+       WHERE p.provisioning_key = $1 AND a.end_date IS NULL`, [key],
+    );
+    const row = result.rows[0];
+    return row ? { partyId: row.party_id, accountId: row.account_id, status: row.status, provisioningState: row.provisioning_state } : null;
+  }
+
+  async createPersonAccount(provisioningKey: string): Promise<{ partyId: PartyId; accountId: AccountId }> {
     const client = await connectDb();
     try {
       await client.query("BEGIN");
@@ -34,8 +45,8 @@ export class PostgresPartyAccountRepository implements PartyAccountRepository {
       const accountId = account.rows[0]?.account_id;
       if (!accountId) throw new Error("Pending account status is not configured");
       await client.query(
-        "INSERT INTO iam.account_provisioning(account_id, state) VALUES ($1, $2)",
-        [accountId, "pending_identity"],
+        "INSERT INTO iam.account_provisioning(account_id, state, provisioning_key) VALUES ($1, $2, $3)",
+        [accountId, "pending_identity", provisioningKey],
       );
       await client.query("COMMIT");
       return { partyId, accountId };
