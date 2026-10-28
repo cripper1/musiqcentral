@@ -4,3 +4,5 @@
 
 .details select{display:block;width:100%;background:#0a1423;color:#fff;border:1px solid #52627a;border-radius:9px;padding:13px;font:inherit;min-height:46px}
 .details pre{font-size:12px;line-height:1.5;color:#b9e5f8}
+
+.actions{display:grid;gap:12px;margin-top:20px}.secondary{border:1px solid #5b7189;background:transparent;color:#dcebf9;border-radius:12px;padding:13px;font:inherit;cursor:pointer}.secondary:hover{background:#25364a}.secondary:disabled{opacity:.6;cursor:wait}
