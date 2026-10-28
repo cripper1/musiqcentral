@@ -71,6 +71,14 @@ export function registerDevOnboarding(app: FastifyInstance): void {
       return reply.code(503).send({ message: "Registration could not be verified against DEV databases.", requestId: request.id });
     }
   });
+  app.delete("/dev/session", async (request, reply) => {
+    if (!allowed(request.headers["x-dev-registration-secret"])) return reply.code(404).send({ message: "Not found" });
+    const token = request.headers["x-dev-session"];
+    if (typeof token !== "string" || token.length > 128) return reply.code(401).send({ message: "Not signed in." });
+    const db = await getIdentityDb();
+    await db.collection("dev_sessions").deleteOne({ token_hash: hash(token) });
+    return reply.send({ signedIn: false });
+  });
   app.get("/dev/session", async (request, reply) => {
     if (!allowed(request.headers["x-dev-registration-secret"])) return reply.code(404).send({ message: "Not found" });
     const token = request.headers["x-dev-session"];
