@@ -29,7 +29,8 @@ export interface ShadowPartyRepository {
 /** Relational Party/Account persistence; implementation must use one PG transaction. */
 export interface PartyAccountRepository {
   findByPartyId(partyId: PartyId): Promise<{ partyId: PartyId; accountId: AccountId; status: string; provisioningState: string | null } | null>;
-  createPersonAccount(): Promise<{ partyId: PartyId; accountId: AccountId }>;
+  findByProvisioningKey(key: string): Promise<{ partyId: PartyId; accountId: AccountId; status: string; provisioningState: string | null } | null>;
+  createPersonAccount(provisioningKey: string): Promise<{ partyId: PartyId; accountId: AccountId }>;
 }
 
 /**
