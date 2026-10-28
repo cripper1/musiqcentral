@@ -53,7 +53,7 @@ export function registerDevOnboarding(app: FastifyInstance): void {
       );
       const mapping = await db.collection("shadow_party_mapping").findOne({ shadow_id: result.shadowId, party_id: result.partyId });
       const profile = await db.collection("dev_registration_profiles").findOne({ shadow_id: result.shadowId, email });
-      if (account.rows[0]?.status !== "active" || account.rows[0]?.state !== "complete" || !mapping || !profile) throw new Error("DEV registration readback failed");
+      if (account.rows[0]?.status !== "active" || account.rows[0]?.state !== "complete" || !mapping || !profile) return reply.code(403).send({ message: "Account is not active or registration is incomplete." });
       const token = randomBytes(32).toString("base64url");
       const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
       await db.collection("dev_sessions").insertOne({ token_hash: hash(token), account_id: result.accountId, party_id: result.partyId, expires_at: expiresAt, created_at: new Date() });
@@ -88,6 +88,6 @@ export function registerDevOnboarding(app: FastifyInstance): void {
     if (!session) return reply.code(401).send({ message: "Session expired or invalid." });
     const account = await query<{ status: string }>("SELECT s.code AS status FROM iam.account a JOIN iam.account_status s ON s.status_id = a.status_id WHERE a.account_id = $1", [session.account_id]);
     if (account.rows[0]?.status !== "active") return reply.code(401).send({ message: "Account not active." });
-    return reply.send({ signedIn: true, accountId: session.account_id, partyId: session.party_id });
+    return reply.send({ signedIn: true });
   });
 }
