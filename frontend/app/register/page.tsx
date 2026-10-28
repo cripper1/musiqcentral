@@ -8,6 +8,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [working, setWorking] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<{ created?: boolean; verified?: Record<string, boolean>; provider?: string } | null>(null);
   const [message, setMessage] = useState("");
   const [complete, setComplete] = useState(false);
 
@@ -22,7 +23,7 @@ export default function RegisterPage() {
     try {
       const response = await fetch("/api/registration", { method: "DELETE", cache: "no-store" });
       if (!response.ok) { setMessage("Could not sign out. Please try again."); return; }
-      setComplete(false); setMessage("You have signed out.");
+      setComplete(false); setDiagnostics(null); setMessage("You have signed out.");
     } catch { setMessage("Could not sign out. Please try again."); }
     finally { setWorking(false); }
   }
@@ -38,9 +39,10 @@ export default function RegisterPage() {
         body: JSON.stringify({ name: name.trim(), email: email.trim() }),
         cache: "no-store"
       });
-      const result: { message?: string } = await response.json();
+      const result: { message?: string; registration?: { created?: boolean }; verified?: Record<string, boolean>; demo?: { provider?: string } } = await response.json();
       setMessage(result.message ?? (response.ok ? "Your account has been created." : "Registration failed."));
       if (response.ok) {
+        setDiagnostics({ created: result.registration?.created, verified: result.verified, provider: result.demo?.provider });
         setComplete(true);
 
       }
@@ -65,6 +67,7 @@ export default function RegisterPage() {
       <button type="submit" disabled={working}>{working ? "Creating your account…" : "Create account"}</button>
     </form>}
     {message && <div role="status" aria-live="polite" className={complete ? styles.success : styles.error}>{message}</div>}
+    {diagnostics && <details className={styles.details} open><summary>DEV registration verification</summary><p>{diagnostics.created ? "New account created" : "Existing account retrieved"} · Identity: {diagnostics.provider ?? "unknown"}</p><pre>{JSON.stringify(diagnostics.verified ?? {}, null, 2)}</pre></details>}
     {complete && <button type="button" disabled={working} onClick={signOut}>Sign out</button>}
     <p className={styles.back}><Link href="/">← Back to MusIQ Central</Link></p>
   </div></main>;
