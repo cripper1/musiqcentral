@@ -34,7 +34,12 @@ export class RegistrationProvisioningService implements IdentityProvisioningServ
       if (existingPartyId !== null) {
         const existing = await this.accounts.findByPartyId(existingPartyId);
         if (!existing) throw new Error("Identity references a missing account");
-        return { shadowId, ...existing, created: false };
+        if (existing.status === "pending" && existing.provisioningState === "pending_identity") {
+          await this.accounts.activate(existing.accountId);
+        } else if (existing.status !== "active" || existing.provisioningState !== "complete") {
+          throw new Error("Account is not eligible for registration");
+        }
+        return { shadowId, partyId: existing.partyId, accountId: existing.accountId, created: false };
       }
       const created = await this.accounts.createPersonAccount();
       await this.mappings.bindPartyId(shadowId, created.partyId);
