@@ -22,6 +22,12 @@ async function main(): Promise<void> {
   await db.collection("sso_assertion_replay").createIndex(
     { expires_at: 1 }, { expireAfterSeconds: 0, name: "ttl_sso_replay" },
   );
+  await db.collection("dev_sessions").createIndex(
+    { token_hash: 1 }, { unique: true, name: "uq_dev_session_token_hash" },
+  );
+  await db.collection("dev_sessions").createIndex(
+    { expires_at: 1 }, { expireAfterSeconds: 0, name: "ttl_dev_session" },
+  );
   await db.collection("shadow_party_mapping").createIndex(
     { shadow_id: 1 }, { unique: true, name: "uq_shadow_party_shadow_id" },
   );
