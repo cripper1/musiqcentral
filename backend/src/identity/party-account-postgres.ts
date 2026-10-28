@@ -5,7 +5,7 @@ type AccountRow = { party_id: string; account_id: string; status: string; provis
 
 /** PostgreSQL owns Party, Account, and registration state. */
 export class PostgresPartyAccountRepository implements PartyAccountRepository {
-  async findByPartyId(partyId: PartyId): Promise<{ partyId: PartyId; accountId: AccountId } | null> {
+  async findByPartyId(partyId: PartyId): Promise<{ partyId: PartyId; accountId: AccountId; status: string; provisioningState: string | null } | null> {
     const result = await query<AccountRow>(
       `SELECT a.party_id::text, a.account_id::text, s.code AS status, p.state AS provisioning_state
        FROM iam.account a JOIN iam.account_status s ON s.status_id = a.status_id
