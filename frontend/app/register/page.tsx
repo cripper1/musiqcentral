@@ -55,7 +55,8 @@ export default function RegisterPage() {
     <Link href="/" className={styles.logo}><Image src="/musiq-central-logo.png" alt="MusIQ Central" width={210} height={158} unoptimized /></Link>
     <p className={styles.eyebrow}>WELCOME TO MUSIQ CENTRAL</p>
     <h1>Create your account</h1>
-    <p className={styles.intro}>Join MusIQ Central to discover music, follow artists and connect with the community.</p>\n    <p className={styles.intro}>DEV environment: network identity verification is simulated. Do not use a real account or password.</p>
+    <p className={styles.intro}>Join MusIQ Central to discover music, follow artists and connect with the community.</p>
+    <p className={styles.intro}>DEV environment: network identity verification is simulated. Do not use a real account or password.</p>
     {!complete && <form className={styles.details} onSubmit={submit}>
       <label htmlFor="full-name">Your name</label>
       <input id="full-name" type="text" autoComplete="name" required maxLength={120} value={name} onChange={e => setName(e.target.value)} />
