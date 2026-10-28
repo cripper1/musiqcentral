@@ -1,17 +1,20 @@
 import { connectDb, query } from "../db.js";
 import type { PartyAccountRepository, PartyId, AccountId } from "./contracts.js";
 
-type AccountRow = { party_id: string; account_id: string };
+type AccountRow = { party_id: string; account_id: string; status: string; provisioning_state: string | null };
 
 /** PostgreSQL owns Party, Account, and registration state. */
 export class PostgresPartyAccountRepository implements PartyAccountRepository {
   async findByPartyId(partyId: PartyId): Promise<{ partyId: PartyId; accountId: AccountId } | null> {
     const result = await query<AccountRow>(
-      "SELECT party_id::text, account_id::text FROM iam.account WHERE party_id = $1 AND end_date IS NULL",
+      `SELECT a.party_id::text, a.account_id::text, s.code AS status, p.state AS provisioning_state
+       FROM iam.account a JOIN iam.account_status s ON s.status_id = a.status_id
+       LEFT JOIN iam.account_provisioning p ON p.account_id = a.account_id
+       WHERE a.party_id = $1 AND a.end_date IS NULL`,
       [partyId],
     );
     const row = result.rows[0];
-    return row ? { partyId: row.party_id, accountId: row.account_id } : null;
+    return row ? { partyId: row.party_id, accountId: row.account_id, status: row.status, provisioningState: row.provisioning_state } : null;
   }
 
   async createPersonAccount(): Promise<{ partyId: PartyId; accountId: AccountId }> {
