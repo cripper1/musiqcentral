@@ -39,29 +39,32 @@ export class RegistrationProvisioningService implements IdentityProvisioningServ
         } else if (existing.status !== "active" || existing.provisioningState !== "complete") {
           throw new Error("Account is not eligible for registration");
         }
+        await db.collection("registration_intents").deleteOne({ shadow_id: shadowId });
         return { shadowId, partyId: existing.partyId, accountId: existing.accountId, created: false };
       }
-      // Persist the recovery pointer in the restricted identity vault before creating
-      // a PostgreSQL account. A retry reuses the same account if the process fails.
-      const intents = db.collection<{ shadow_id: string; party_id?: string; account_id?: string; created_at: Date }>("registration_intents");
+      // The random key lives only in the restricted vault and PostgreSQL provisioning
+      // state. PostgreSQL commits the key and account atomically, so a retry can
+      // always locate an account even if MongoDB was not updated after commit.
+      const intents = db.collection<{ shadow_id: string; provisioning_key: string; created_at: Date }>("registration_intents");
       const intent = await intents.findOne({ shadow_id: shadowId });
-      if (intent?.party_id && intent.account_id) {
-        const pending = await this.accounts.findByPartyId(intent.party_id);
-        if (!pending || pending.accountId !== intent.account_id) throw new Error("Registration recovery account mismatch");
-        if (pending.status !== "pending" || pending.provisioningState !== "pending_identity") throw new Error("Registration recovery account not pending");
-        await this.mappings.bindPartyId(shadowId, intent.party_id);
-        await this.accounts.activate(intent.account_id);
-        await intents.deleteOne({ shadow_id: shadowId, account_id: intent.account_id });
-        return { shadowId, partyId: intent.party_id, accountId: intent.account_id, created: false };
+      const key = intent?.provisioning_key ?? randomUUID();
+      if (!intent) {
+        try {
+          await intents.insertOne({ shadow_id: shadowId, provisioning_key: key, created_at: new Date() });
+        } catch (error) {
+          // An existing intent may have been inserted by a previous attempt.
+          throw new Error("Registration recovery intent conflict; retry");
+        }
       }
-      if (intent) throw new Error("Registration recovery requires reconciliation");
-      await intents.insertOne({ shadow_id: shadowId, created_at: new Date() });
-      const created = await this.accounts.createPersonAccount();
-      await intents.updateOne({ shadow_id: shadowId }, { $set: { party_id: created.partyId, account_id: created.accountId } });
-      await this.mappings.bindPartyId(shadowId, created.partyId);
-      await this.accounts.activate(created.accountId);
-      await intents.deleteOne({ shadow_id: shadowId, account_id: created.accountId });
-      return { shadowId, ...created, created: true };
+      const recovered = await this.accounts.findByProvisioningKey(key);
+      if (recovered && (recovered.status !== "pending" || recovered.provisioningState !== "pending_identity")) {
+        throw new Error("Registration recovery account is not pending");
+      }
+      const account = recovered ?? await this.accounts.createPersonAccount(key);
+      await this.mappings.bindPartyId(shadowId, account.partyId);
+      await this.accounts.activate(account.accountId);
+      await intents.deleteOne({ shadow_id: shadowId, provisioning_key: key });
+      return { shadowId, partyId: account.partyId, accountId: account.accountId, created: !recovered };
     } finally {
       await locks.deleteOne({ shadow_id: shadowId, owner });
     }
