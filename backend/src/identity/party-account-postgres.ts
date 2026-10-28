@@ -44,17 +44,18 @@ export class PostgresPartyAccountRepository implements PartyAccountRepository {
     }
   }
 
+  /** Only newly provisioned pending accounts may transition to active. */
   async activate(accountId: AccountId): Promise<void> {
     const client = await connectDb();
     try {
       await client.query("BEGIN");
       const updated = await client.query(
-        "UPDATE iam.account SET status_id = s.status_id, update_date = now() FROM iam.account_status s WHERE iam.account.account_id = $1 AND s.code = 'active' AND iam.account.end_date IS NULL",
+        "UPDATE iam.account SET status_id = s.status_id, update_date = now() FROM iam.account_status s WHERE iam.account.account_id = $1 AND s.code = 'active' AND iam.account.end_date IS NULL AND iam.account.status_id = (SELECT status_id FROM iam.account_status WHERE code = 'pending') AND EXISTS (SELECT 1 FROM iam.account_provisioning p WHERE p.account_id = $1 AND p.state = 'pending_identity')",
         [accountId],
       );
       if (updated.rowCount !== 1) throw new Error("Account activation failed");
       const completed = await client.query(
-        "UPDATE iam.account_provisioning SET state = 'complete', completed_at = now(), updated_at = now(), attempt_count = attempt_count + 1 WHERE account_id = $1",
+        "UPDATE iam.account_provisioning SET state = 'complete', completed_at = now(), updated_at = now(), attempt_count = attempt_count + 1 WHERE account_id = $1 AND state = 'pending_identity'",
         [accountId],
       );
       if (completed.rowCount !== 1) throw new Error("Provisioning state missing");
