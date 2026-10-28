@@ -5,8 +5,6 @@ import Image from "next/image";
 import styles from "./dashboard.module.css";
 import { SignOut } from "./sign-out";
 
-export const dynamic = "force-dynamic";
-
 export default async function Dashboard() {
   const cookieStore = await cookies();
   const token = cookieStore.get("musiq_session")?.value;
