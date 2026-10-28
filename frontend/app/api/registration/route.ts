@@ -18,10 +18,10 @@ export async function POST(request: Request) {
       body: JSON.stringify({ ...body, decision: "approved" }), cache: "no-store", signal: AbortSignal.timeout(20000),
     });
     const data = await upstream.json();
-    if (!upstream.ok) return NextResponse.json(data, { status: upstream.status });
+    if (!upstream.ok) return NextResponse.json({ message: typeof data?.message === "string" ? data.message : "Registration failed." }, { status: upstream.status });
     const { sessionToken, expiresAt } = data;
     if (typeof sessionToken !== "string" || typeof expiresAt !== "string") throw new Error("Missing session");
-    const result = NextResponse.json({ message: "Registration completed." }, { headers: { "cache-control": "no-store" } });
+    const result = NextResponse.json({ message: data.message, demo: data.demo, registration: data.registration, verified: data.verified }, { headers: { "cache-control": "no-store" } });
     result.cookies.set("musiq_session", sessionToken, { httpOnly: true, secure: true, sameSite: "lax", path: "/", expires: new Date(expiresAt) });
     return result;
   } catch {
