@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import styles from "./dashboard.module.css";
 import { SignOut } from "./sign-out";
+import { ArtistChannels } from "./artist-channels";
 
 // Session validation is runtime-only; this page must not be statically prerendered.
 export const instant = false;
@@ -36,7 +37,7 @@ export default async function Dashboard() {
     </section>
     <section className={styles.grid} aria-label="Music Central experiences">
       <article className={styles.card}><span className={styles.symbol}>♫</span><h2>Discover Music</h2><p>Find artists, releases and new sounds. Discovery opens as artists begin publishing.</p><span className={styles.status}>Coming next</span></article>
-      <article className={styles.card}><span className={styles.symbol}>✦</span><h2>My Artist Channel</h2><p>Create your artist or band presence, add recordings, and publish music.</p><span className={styles.status}>Coming next</span></article>
+      <ArtistChannels />
       <article className={styles.card}><span className={styles.symbol}>◉</span><h2>My Identity</h2><p>Your single account will support fan, artist and band participation without separate logins.</p><span className={styles.status}>Planned</span></article>
     </section>
     <section className={styles.updates}><h2>Recently added music</h2><p>Published recordings will appear here when the catalog is connected. No demo tracks are presented as real releases.</p></section>
