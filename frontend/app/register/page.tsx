@@ -68,7 +68,7 @@ export default function RegisterPage() {
     </form>}
     {message && <div role="status" aria-live="polite" className={complete ? styles.success : styles.error}>{message}</div>}
     {diagnostics && <details className={styles.details} open><summary>DEV registration verification</summary><p>{diagnostics.created ? "New account created" : "Existing account retrieved"} · Identity: {diagnostics.provider ?? "unknown"}</p><pre>{JSON.stringify(diagnostics.verified ?? {}, null, 2)}</pre></details>}
-    {complete && <div className={styles.actions}><Link href="/dashboard" className={styles.primary}>Continue to Music Central →</Link><button className={styles.secondary} type="button" disabled={working} onClick={signOut}>Sign out</button></div>}
+    {complete && <div className={styles.actions}><Link href="/artist" className={styles.primary}>Continue to Music Central →</Link><button className={styles.secondary} type="button" disabled={working} onClick={signOut}>Sign out</button></div>}
     <p className={styles.back}><Link href="/">← Back to MusIQ Central</Link></p>
   </div></main>;
 }
