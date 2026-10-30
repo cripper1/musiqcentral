@@ -1,4 +1,5 @@
-import styles from "../dashboard/dashboard.module.css";\nimport { ArtistShell } from "./artist-shell";
+import styles from "../dashboard/dashboard.module.css";
+import { ArtistShell } from "./artist-shell";
 import { ArtistSpaces } from "./artist-spaces";
 export default function ArtistIndex() {
   return <ArtistShell>
