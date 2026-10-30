@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default async function ArtistLayout({ children }: { children: React.ReactNode }) {
+async function AuthenticatedArtistContent({ children }: { children: React.ReactNode }) {
   const token = (await cookies()).get("musiq_session")?.value;
   const backend = process.env.MUSIQ_BACKEND_URL;
   const secret = process.env.DEV_REGISTRATION_SECRET;
@@ -16,4 +17,10 @@ export default async function ArtistLayout({ children }: { children: React.React
   } catch { /* Fail closed. */ }
   if (!authenticated) redirect("/register");
   return children;
+}
+
+export default function ArtistLayout({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<p>Loading artist workspace…</p>}>
+    <AuthenticatedArtistContent>{children}</AuthenticatedArtistContent>
+  </Suspense>;
 }
