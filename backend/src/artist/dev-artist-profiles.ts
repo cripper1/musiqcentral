@@ -2,27 +2,27 @@ import type { FastifyInstance } from "fastify";
 import { connectDb, query } from "../db.js";
 import { devArtistActor, devArtistEnabled } from "./dev-artist-auth.js";
 
-type ProfileInput = { name: string; biography: string; genreIds: number[] };
+type ProfileInput = { name: string; biography: string; genreIds: string[] };
 const profileSchema = { body: { type:"object", additionalProperties:false, required:["name","biography","genreIds"],
   properties: { name:{type:"string",minLength:1,maxLength:120}, biography:{type:"string",maxLength:5000},
-    genreIds:{type:"array",maxItems:20,uniqueItems:true,items:{type:"integer",minimum:1}} } } } as const;
+    genreIds:{type:"array",maxItems:20,uniqueItems:true,items:{type:"string",pattern:"^[0-9]+$",maxLength:19}} } } } as const;
 
 export function registerDevArtistProfiles(app: FastifyInstance): void {
   if (!devArtistEnabled()) return;
   app.get("/dev/music/genres", async (req,reply) => {
     if (!await devArtistActor(req.headers)) return reply.code(401).send({message:"Not signed in."});
-    const result = await query(`SELECT genre_id AS "genreId", code, name, kind FROM catalog.genre
+    const result = await query(`SELECT genre_id::text AS "genreId", code, name, kind FROM catalog.genre
       WHERE active=TRUE ORDER BY name`);
     return { genres: result.rows };
   });
   app.get<{Params:{channelId:string}}>("/dev/artist/channels/:channelId/profile",async(req,reply)=>{
     const party=await devArtistActor(req.headers);
     if(!party)return reply.code(401).send({message:"Not signed in."});
-    if(!/^\\d+$/.test(req.params.channelId))return reply.code(400).send({message:"Invalid artist space."});
+    if(!/^\d+$/.test(req.params.channelId))return reply.code(400).send({message:"Invalid artist space."});
     const result=await query<{channelId:string;name:string;biography:string;genreIds:number[]}>(`
       SELECT c.channel_id::text AS "channelId",c.name,COALESCE(p.biography,'') AS biography,
-        COALESCE((SELECT array_agg(cg.genre_id ORDER BY cg.genre_id) FROM artist.channel_genre cg
-          WHERE cg.channel_id=c.channel_id),'{}'::bigint[]) AS "genreIds"
+        COALESCE((SELECT array_agg(cg.genre_id::text ORDER BY cg.genre_id) FROM artist.channel_genre cg
+          WHERE cg.channel_id=c.channel_id),'{}'::text[]) AS "genreIds"
       FROM artist.artist_channel c
       JOIN artist.channel_party cp ON cp.channel_id=c.channel_id AND cp.party_id=$2
         AND cp.relation_code='owner' AND cp.end_date IS NULL
@@ -34,7 +34,7 @@ export function registerDevArtistProfiles(app: FastifyInstance): void {
   app.put<{Params:{channelId:string};Body:ProfileInput}>("/dev/artist/channels/:channelId/profile",{schema:profileSchema},async(req,reply)=>{
     const party=await devArtistActor(req.headers);
     if(!party)return reply.code(401).send({message:"Not signed in."});
-    if(!/^\\d+$/.test(req.params.channelId))return reply.code(400).send({message:"Invalid artist space."});
+    if(!/^\d+$/.test(req.params.channelId))return reply.code(400).send({message:"Invalid artist space."});
     const {name,biography,genreIds}=req.body;
     if(!name.trim())return reply.code(400).send({message:"Artist name required."});
     const client=await connectDb();
