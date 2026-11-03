@@ -101,6 +101,16 @@ Wait for explicit approval before writing. Approval for one change is not blanke
 - Client-facing or meeting-ready documents belong in the private Google Drive working area until expressly approved for Client Shared. Preserve branded Word/table formatting and avoid silently circulating drafts.
 - Never promote unapproved product proposals, network economics, marketing figures or provisional integration assumptions into hard-coded business rules.
 
+### Integrated project knowledge — mandatory
+
+Before assessing project status, recommending changes, or implementing work, consider all relevant available project knowledge together: the current GitHub `dev` code and history, canonical engineering documentation, living Google Drive documents, uploaded project materials, stakeholder communications and decisions, and established prior project discussions.
+
+Do not substitute any single source for the complete project context. Determine each source's currency, authority, relevance, and verification status. Reconcile differences using documented precedence and dates; surface unresolved conflicts rather than silently selecting a convenient interpretation.
+
+Preserve continuity with approved architecture, implementation decisions, naming conventions, existing components, and established workflows. Inspect what already exists before recommending replacement, restructuring, or rebuilding.
+
+Distinguish documented intent, approved requirements, committed code, deployed code, and runtime-verified behavior. When relevant context cannot be accessed or verified, disclose the limitation instead of presenting a partial review as a complete assessment.
+
 ## 10. Working method
 
 **Discuss → Explain mechanisms → Approve → Implement on `dev` → Inspect differences → Build/test → Verify deployed behavior → Update documentation.**
