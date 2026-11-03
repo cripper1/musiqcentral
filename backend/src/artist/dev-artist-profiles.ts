@@ -19,7 +19,7 @@ export function registerDevArtistProfiles(app: FastifyInstance): void {
     const party=await devArtistActor(req.headers);
     if(!party)return reply.code(401).send({message:"Not signed in."});
     if(!/^\d+$/.test(req.params.channelId))return reply.code(400).send({message:"Invalid artist space."});
-    const result=await query<{channelId:string;name:string;biography:string;genreIds:string[]}>>(`
+    const result=await query<{channelId:string;name:string;biography:string;genreIds:string[]}>(`
       SELECT c.channel_id::text AS "channelId",c.name,COALESCE(p.biography,'') AS biography,
         COALESCE((SELECT array_agg(cg.genre_id::text ORDER BY cg.genre_id) FROM artist.channel_genre cg
           WHERE cg.channel_id=c.channel_id),'{}'::text[]) AS "genreIds"
