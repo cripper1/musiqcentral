@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import { ArtistProfileEditor } from "./profile-editor";
 import styles from "../../dashboard/dashboard.module.css";
 import { useArtistSpaces } from "../artist-spaces";
 import { ArtistRecordings } from "./recordings";
 
 const sections = [
-  { title: "Artist Profile", description: "Performing name, genres, biography, and artwork.", status: "Profile editing next" },
   { title: "Music Analytics", description: "Most played and downloaded songs from verified activity.", status: "Planned" },
   { title: "Fans & Community", description: "Followers, fan list, and community engagement.", status: "Planned" },
   { title: "Fan Messages", description: "Messages to fans who have opted in.", status: "Planned" },
@@ -17,6 +18,7 @@ const sections = [
 
 export function ArtistWorkspace({ channelId }: { channelId: string }) {
   const { spaces, loading, error } = useArtistSpaces();
+  const [updatedName,setUpdatedName] = useState("");
   const space = spaces.find(item => item.channelId === channelId);
   if (loading) return <section className={styles.updates}><p>Loading artist space…</p></section>;
   if (error) return <section className={styles.updates}><p role="alert" className={styles.error}>{error}</p></section>;
@@ -24,11 +26,12 @@ export function ArtistWorkspace({ channelId }: { channelId: string }) {
   return <>
     <section className={styles.hero}>
       <p className={styles.eyebrow}>ARTIST OR BAND SPACE</p>
-      <h1>{space.name}</h1>
+      <h1>{updatedName || space.name}</h1>
       <p>Manage your artist identity, recordings, audience, and activities.</p>
       <p><Link href="/artist">All artist spaces</Link> · <Link href="/dashboard">Dashboard</Link></p>
     </section>
     <section className={styles.updates}><h2>Overview</h2><p>Your artist space is active. Plays, downloads, fans, and sales will display when real activity data is available.</p></section>
+    <ArtistProfileEditor channelId={channelId} onSaved={setUpdatedName} />
     <ArtistRecordings channelId={channelId} />
     <section className={styles.grid} aria-label="Artist management areas">
       {sections.map(section => <article className={styles.card} key={section.title}>
