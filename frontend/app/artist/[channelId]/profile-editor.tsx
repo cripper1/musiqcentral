@@ -2,8 +2,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import styles from "../../dashboard/dashboard.module.css";
 
-type Genre = {genreId:number;code:string;name:string;kind:"genre"|"style"};
-type Profile = {channelId:string;name:string;biography:string;genreIds:number[]};
+type Genre = {genreId:string;code:string;name:string;kind:"genre"|"style"};
+type Profile = {channelId:string;name:string;biography:string;genreIds:string[]};
 
 export function ArtistProfileEditor({channelId,onSaved}:{channelId:string;onSaved:(name:string)=>void}){
   const [genres,setGenres]=useState<Genre[]>([]);
@@ -45,7 +45,7 @@ export function ArtistProfileEditor({channelId,onSaved}:{channelId:string;onSave
     }catch(err){setError(err instanceof Error?err.message:"Could not save artist profile.");}
     finally{setSaving(false);}
   }
-  function toggle(genreId:number,checked:boolean){
+  function toggle(genreId:string,checked:boolean){
     setProfile(current=>current?{...current,genreIds:checked?
       [...current.genreIds,genreId]:current.genreIds.filter(id=>id!==genreId)}:current);
     setMessage("");
