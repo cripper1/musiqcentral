@@ -67,6 +67,7 @@ INSERT INTO catalog.genre(code,name,kind) VALUES
 GRANT SELECT ON catalog.genre,catalog.genre_parent,catalog.genre_alias,catalog.genre_external_reference TO musiqcentral_dev_app;
 GRANT SELECT,INSERT,DELETE ON artist.channel_genre TO musiqcentral_dev_app;
 GRANT SELECT,INSERT,UPDATE ON artist.channel_profile TO musiqcentral_dev_app;
+GRANT UPDATE(name,update_date) ON artist.artist_channel TO musiqcentral_dev_app;
 GRANT SELECT ON catalog.recording_genre TO musiqcentral_dev_app;
 COMMIT;
 -- Follow-up migration: curated styles, vetted external IDs and cycle-prevention policy.
